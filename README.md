@@ -1,69 +1,110 @@
-# Instalar-wazuh-via-Ansible
-Instalar wazuh via Ansible
-Documentação: Instalação e Configuração do Wazuh Agent via Ansible
+# 🚀 Instalar Wazuh via Ansible
 
-________________________________________
-1.	Clonar wazuh-ansible e fazer checkout da versão correta.
-2.	Copiar a role wazuh para /etc/ansible/roles/.
-3.	Configurar inventário /etc/ansible/hosts.
-4.	Criar ou ajustar o playbook /etc/ansible/wazuh-agent.yml.
-5.	Testar ping Ansible.
-6.	Desativar temporariamente o Host Key Checking
-7.	Testando a Conexão
-8.	Rodar playbook.
-9.	Verificação Wazuh Dashboard
-________________________________________
-Estrutura de diretórios final
-/etc/ansible/
-├── hosts                  # inventário
-├── wazuh-agent.yml        # playbook
-├── roles/
-│   └── wazuh/
-│       └── ansible-wazuh-agent/
-└── wazuh-ansible/         # repositório clonado (opcional)
-________________________________________
-1. Pré-requisitos
-•	Servidor Linux (Ubuntu/Debian ou RHEL/CentOS) dedicado para rodar o Ansible.
-•	Acesso root ou usuário com privilégios sudo.
-•	Conectividade SSH entre o servidor Ansible e os hosts onde o Wazuh Agent será instalado.
-•	IP/Hostname do Wazuh Manager e credenciais de API (api_user / api_password).
+![Ansible](https://img.shields.io/badge/Ansible-2.17-blue)
+![Wazuh](https://img.shields.io/badge/Wazuh-4.12.0-orange)
 
-2. Instalação do Ansible
-Ubuntu/Debian
-apt-get update -y 
-apt-get install ansible -y
-ansible –version
- 
-________________________________________
-3. Estrutura de diretórios e roles
-3.1. Clonar repositório oficial do Wazuh
+**Descrição:** Passo a passo visual para instalação e configuração do **Wazuh Agent** usando Ansible.  
+
+---
+
+## 📖 Sumário
+
+1. [Pré-requisitos](#-pré-requisitos)  
+2. [Instalação do Ansible](#-instalação-do-ansible)  
+3. [Estrutura de diretórios e roles](#-estrutura-de-diretórios-e-roles)  
+4. [Configuração do Inventário](#-configuração-do-inventário)  
+5. [Configuração do Playbook](#-configuração-do-playbook)  
+6. [Desativar temporariamente o Host Key Checking](#-desativar-temporariamente-o-host-key-checking)  
+7. [Testando a Conexão](#-testando-a-conexão)  
+8. [Executando o Playbook](#-executando-o-playbook)  
+9. [Verificação no Wazuh Dashboard](#-verificação-no-wazuh-dashboard)  
+
+---
+
+## 🛠️ 1. Pré-requisitos
+
+- Servidor Linux (Ubuntu/Debian ou RHEL/CentOS) dedicado para Ansible  
+- Acesso root ou usuário com privilégios sudo  
+- Conectividade SSH entre o servidor Ansible e os hosts de destino  
+- IP/Hostname do **Wazuh Manager** e credenciais de API (`api_user` / `api_password`)  
+
+> 🔗 [Documentação oficial Wazuh](https://documentation.wazuh.com/)  
+> 🔗 [Documentação oficial Ansible](https://docs.ansible.com/)
+
+---
+
+## 💻 2. Instalação do Ansible
+
+### Ubuntu/Debian
+
+```bash
+
+sudo apt-get update -y
+sudo apt-get install ansible git -y
+ansible --version
+
+````
+
+> ✅ Deve retornar algo como: `ansible [core 2.17.13]`
+
+---
+
+## 📂 3. Estrutura de diretórios e roles
+
+### 3.1 Clonar repositório oficial do Wazuh
+
+```bash
+
 sudo mkdir -p /etc/ansible/roles
 cd /etc/ansible
 
 git clone https://github.com/wazuh/wazuh-ansible.git
 cd wazuh-ansible
 git checkout v4.12.0
-3.2. Copiar a role para o diretório padrão do Ansible
-cp -r roles/wazuh /etc/ansible/roles/________________________________________
-4. Configuração do Inventário (/etc/ansible/hosts)
+
+```
+
+### 3.2 Copiar role para o diretório padrão
+
+```bash
+
+cp -r roles/wazuh /etc/ansible/roles/
+
+```
+
+---
+
+## 📋 4. Configuração do Inventário (`/etc/ansible/hosts`)
+
+```ini
+
 [wazuh_agents]
 192.168.15.152 ansible_user=usuario ansible_ssh_pass=senha
-⚠️ O grupo wazuh_agents deve bater exatamente com o playbook.
-🔹 Substitua usuario e senha pelas credenciais SSH corretas.________________________________________
-5. Configuração do Playbook (/etc/ansible/wazuh-agent.yml)
+
+```
+
+> ⚠️ O grupo `wazuh_agents` deve coincidir com o playbook
+> 🔹 Substitua `usuario` e `senha` pelas credenciais SSH corretas
+
+---
+
+## 📄 5. Configuração do Playbook (`/etc/ansible/wazuh-agent.yml`)
+
+```yaml
+
 ---
 - name: Deploy Wazuh agent
   hosts: wazuh_agents
   become: yes
   vars:
     wazuh_managers:
-      - address: 192.168.15.87	# IP do Wazuh Manager
+      - address: 192.168.15.87    # IP do Wazuh Manager
         port: 1514
         protocol: tcp
         api_port: 55000
         api_proto: https
-        api_user: wazuh-wui #usuario da API
-        api_password: ChangeMe123 #Senha da API
+        api_user: wazuh-wui       # usuário da API
+        api_password: ChangeMe123 # senha da API
 
     wazuh_agent_authd:
       enable: true
@@ -74,31 +115,76 @@ cp -r roles/wazuh /etc/ansible/roles/________________________________________
   roles:
     - wazuh/ansible-wazuh-agent
 
-•	# Ajuste address, api_user e api_password conforme sua instalação.
-________________________________________
-6. Desativar temporariamente o Host Key Checking
+```
+
+> ⚙️ Ajuste `address`, `api_user` e `api_password` conforme sua instalação
+
+---
+
+## 🔑 6. Desativar temporariamente o Host Key Checking
+
+```bash
 
 sudo apt update
 sudo apt install -y sshpass
-Edite ou crie o arquivo /etc/ansible/ansible.cfg e adicione:
+
+```
+
+Edite ou crie `/etc/ansible/ansible.cfg`:
+
+```ini
+
 [defaults]
 host_key_checking = False
-________________________________________
-7. Testando a Conexão
+
+```
+
+---
+
+## 📡 7. Testando a Conexão
+
+```bash
+
 ansible wazuh_agents -m ping
-Deve retornar pong.
- 
-________________________________________
-8. Executando o Playbook
+
+```
+
+> ✅ Deve retornar: `"ping": "pong"`
+
+---
+
+## ▶️ 8. Executando o Playbook
+
+```bash
+
 ansible-playbook /etc/ansible/wazuh-agent.yml -b -K -vvvv
-•	-b: executa com privilégios sudo.
-•	-K: solicita senha sudo.
-•	-vvvv: modo detalhado.
- 
-________________________________________
-9. Verificação
-1.	Acesse o Wazuh Dashboard.
-2.	Vá em Agents e confirme que os hosts aparecem como Active.
- 
 
+```
 
+* `-b` : executa com privilégios sudo
+* `-K` : solicita senha sudo
+* `-vvvv` : modo detalhado para debug
+
+---
+
+## 👀 9. Verificação no Wazuh Dashboard
+
+1. Acesse o **Wazuh Dashboard**
+2. Vá em **Agents**
+3. Confirme que os hosts aparecem como **Active** ✅
+
+---
+
+## 🗂️ Estrutura final de diretórios
+
+```
+/etc/ansible/
+├── hosts                  # inventário
+├── wazuh-agent.yml        # playbook
+├── roles/
+│   └── wazuh/
+│       └── ansible-wazuh-agent/
+└── wazuh-ansible/         # repositório clonado (opcional)
+```
+
+---
